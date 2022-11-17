@@ -9,15 +9,21 @@ const timeout = function (s) {
     });
 };
 
-//turn API results into json
-export const getJSON = async function (url) {
+// uploadData is undefined by default, if your just trying to get JSON and there is no upload data to upload
+export const AJAX = async function (url, uploadData = undefined) {
     try {
+        const fetchProm = uploadData ? fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            //data we want to send
+            body: JSON.stringify(uploadData),
+
+        }) : fetch(url);
 
         //have a race between timeout promise and getjson
-        const fetchProm = fetch(url)
-        const res = await Promise.race([fetchProm, timeout(TIMEOUT_SEC)]);
-
-
+        const res = await Promise.race([fetchProm, timeout(TIMEOUT_SEC)])
         const data = await res.json();
 
         if (!res.ok) {
@@ -29,6 +35,12 @@ export const getJSON = async function (url) {
         //propagate error down
         throw err;
     }
+}
+
+/*
+//turn API results into json
+export const getJSON = async function (url) {
+
 
 }
 
@@ -63,3 +75,4 @@ export const sendJSON = async function (url, uploadData) {
     }
 
 }
+*/
