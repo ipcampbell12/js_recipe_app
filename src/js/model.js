@@ -41,7 +41,7 @@ export const loadRecipe = async function (id) {
 
     try {
 
-        const data = await AJAX(`${API_URL}${id}`)
+        const data = await AJAX(`${API_URL}${id}?key=${KEY}`)
 
         state.recipe = createRecipeObject(data)
         //check if there is already a recipe with the same id in the bookmark state
@@ -69,7 +69,7 @@ export const loadRecipe = async function (id) {
 export const loadSearchResults = async function (query) {
     try {
         state.search.query = query
-        const data = await AJAX(`${API_URL}?search=${query}`)
+        const data = await AJAX(`${API_URL}?search=${query}&key=${KEY}`)
         console.log(data)
 
         //array of search recipes 
@@ -79,6 +79,7 @@ export const loadSearchResults = async function (query) {
                 title: rec.title,
                 publisher: rec.publisher,
                 image: rec.image_url,
+                ...(rec.key && { key: rec.key }),
             };
         });
 
@@ -169,8 +170,8 @@ export const uploadRecipe = async function (newRecipe) {
     try {
         const ingredients = Object.entries(newRecipe).filter(
             entry => entry[0].startsWith('ingredient') && entry[1] !== ''
-        ).map(ing => { //create object for each ingrdient
-            const ingArr = ing[1].replaceAll(' ', '').split(',');
+        ).map(ing => { //create object for each ingrdient and remove extra spaces
+            const ingArr = ing[1].split(',').map(el => el.trime())
 
             //check to make sure the data was entered correctly 
             if (ingArr.length !== 3) {
