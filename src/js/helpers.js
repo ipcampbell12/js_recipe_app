@@ -31,3 +31,35 @@ export const getJSON = async function (url) {
     }
 
 }
+
+//kind of like using insomnia
+//post data using fetch
+export const sendJSON = async function (url, uploadData) {
+    try {
+
+
+        const fetchProm = fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            //data we want to send
+            body: JSON.stringify(uploadData),
+
+        });
+
+        //still have race between fetch and timeout
+        const res = await Promise.race([fetchProm, timeout(TIMEOUT_SEC)]);
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(`${data.message} (${res.status})`)
+        };
+        return data;
+    } catch (err) {
+
+        //propagate error down
+        throw err;
+    }
+
+}

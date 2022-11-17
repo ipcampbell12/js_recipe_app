@@ -1,6 +1,6 @@
 import { async } from 'regenerator-runtime';
-import { API_URL, RES_PER_PAGE } from './config.js';
-import { getJSON } from './helpers.js';
+import { API_URL, RES_PER_PAGE, KEY } from './config.js';
+import { getJSON, sendJSON } from './helpers.js';
 
 export const state = {
     recipe: {},
@@ -14,6 +14,25 @@ export const state = {
     bookmarks: [],
 }
 
+const createRecipeObject = function (data) {
+    const { recipe } = data.data;
+    return {
+        id: recipe.id,
+        title: recipe.title,
+        publisher: recipe.publisher,
+        sourceURl: recipe.source_url,
+        image: recipe.image_url,
+        servings: recipe.servings,
+        cookingTime: recipe.cooking_time,
+        ingredients: recipe.ingredients,
+
+        //&& short circuits, so if the key doesn't exist, nothing happens
+        // if it does exist, the second part is returned and the value is added to everything else
+        //trick for conditionally adding properties to an object
+        ...(recipe.key && { key: recipe.key }),
+    };
+};
+
 
 //fetch data from recipe api
 //doesn't return anything, changes stat object
@@ -23,19 +42,7 @@ export const loadRecipe = async function (id) {
 
         const data = await getJSON(`${API_URL}${id}`)
 
-
-        const { recipe } = data.data;
-        state.recipe = {
-            id: recipe.id,
-            title: recipe.title,
-            publisher: recipe.publisher,
-            sourceURl: recipe.source_url,
-            image: recipe.image_url,
-            servings: recipe.servings,
-            cookingTime: recipe.cooking_time,
-            ingredients: recipe.ingredients,
-        };
-
+        state.recipe = createRecipeObject(data)
         //check if there is already a recipe with the same id in the bookmark state
         //if so, mark the current recipe loaded from the API as bookmarked set to true
         //all recipes will either have bookmarked set to true or false
@@ -152,7 +159,7 @@ const clearBookmarks = function () {
     localStorage.clear('bookmarks');
 }
 
-//clearBookmarks();
+// clearBookmarks();
 
 export const uploadRecipe = async function (newRecipe) {
 
@@ -179,14 +186,21 @@ export const uploadRecipe = async function (newRecipe) {
             title: newRecipe.title,
             source_url: newRecipe.sourceUrl,
             image_url: newRecipe.image,
-            published: newRecipe.publisher,
+            publisher: newRecipe.publisher,
             cooking_time: +newRecipe.cookingTime,
             servings: +newRecipe.servings,
             ingredients,
         };
 
 
-        console.log(recipe)
+        // console.log(recipe)
+
+        // will need api key
+        const data = await sendJSON(`${API_URL}?key=${KEY}`, recipe);
+        state.recipe = createRecipeObject(data);
+
+        // add created recipe to bookmarks
+        addBookmark(state.recipe);
     } catch (err) {
         throw err;
     }
